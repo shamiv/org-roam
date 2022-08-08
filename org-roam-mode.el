@@ -331,12 +331,16 @@ Valid states are 'visible, 'exists and 'none."
   "Recompute contents of the persistent `org-roam-buffer'.
 Has no effect when there's no `org-roam-node-at-point'."
   (when-let ((node (org-roam-node-at-point)))
-    (unless (equal node org-roam-buffer-current-node)
+    (unless (and (equal node org-roam-buffer-current-node) (get-buffer-window org-roam-buffer))
       (setq org-roam-buffer-current-node node
             org-roam-buffer-current-directory org-roam-directory)
-      (with-current-buffer (get-buffer-create org-roam-buffer)
-        (org-roam-buffer-render-contents)
-        (add-hook 'kill-buffer-hook #'org-roam-buffer--persistent-cleanup-h nil t)))))
+      (if (get-buffer-window org-roam-buffer)
+		  (delete-window (get-buffer-window org-roam-buffer)))
+      (let ((buffer (get-buffer-create org-roam-buffer)))
+		(with-current-buffer buffer
+		  (org-roam-buffer-render-contents)
+		  (add-hook 'kill-buffer-hook #'org-roam-buffer--persistent-cleanup-h nil t))
+		(display-buffer buffer)))))
 
 (defun org-roam-buffer--persistent-cleanup-h ()
   "Clean-up global state thats dedicated for the persistent `org-roam-buffer'."
